@@ -12,7 +12,7 @@ Work in progress.
 - Click the option to choose a `manifest.json` file.
 - Select the `manifest.json` from this repo.
 
-## Hot Refreshing
+## Cold Refreshing
 
 - In Figma, start the plugin using _Plugins_, _Play_.
 - In a separate Terminal tab, run `modd` to hot reload changes to Figma using [Modd](https://github.com/cortesi/modd).
