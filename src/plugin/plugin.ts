@@ -9,7 +9,17 @@ import {
   addVectors,
   interpolateCubicBezier,
 } from "../utils"
-import getStroke from "perfect-freehand"
+import getStroke, { StrokeOptions } from "perfect-freehand"
+
+const SPLIT = 10
+const EASINGS = {
+  linear: (t: number) => t,
+  easeIn: (t: number) => t * t,
+  easeOut: (t: number) => t * (2 - t),
+  easeInOut: (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
+}
+
+const previousNodes: Record<string, VectorNode> = {}
 
 // Sends a message to the plugin UI
 function postMessage({ type, payload }: WorkerAction): void {
@@ -19,16 +29,26 @@ function postMessage({ type, payload }: WorkerAction): void {
 // Get all of the currently selected Figma nodes, filtered
 // with the provided array of NodeTypes.
 function getSelectedNodes() {
-  const vectorNodes = figma.currentPage.selection.filter(
+  return (figma.currentPage.selection.filter(
     ({ type }) => type === "VECTOR"
-  ) as VectorNode[]
-
-  return vectorNodes.map(({ id, name, type, vectorNetwork }: VectorNode) => ({
+  ) as VectorNode[]).map(({ id, name, type }: VectorNode) => ({
     id,
     name,
     type,
-    vectorNetwork,
   }))
+}
+
+// Get all of the currently selected Figma nodes, filtered
+// with the provided array of NodeTypes.
+function getSelectedNodeIds() {
+  return (figma.currentPage.selection.filter(
+    ({ type }) => type === "VECTOR"
+  ) as VectorNode[]).map(({ id }) => id)
+}
+// Get all of the currently selected Figma nodes, filtered
+// with the provided array of NodeTypes.
+function getSelectedAppliedNodeIds() {
+  return getSelectedNodeIds().filter((id) => previousNodes[id] !== undefined)
 }
 
 // Zooms the Figma viewport to a node
@@ -55,8 +75,22 @@ function sendInitialSelectedNodes() {
   })
 }
 
+function setInitialNodes(nodeIds: string[]) {
+  for (let id of nodeIds) {
+    if (previousNodes[id] === undefined) {
+      const realNode = figma.getNodeById(id)
+      if (!realNode) continue
+      const originalNode = realNode.getPluginData("perfect_freehand")
+      if (originalNode) {
+        previousNodes[id] = JSON.parse(originalNode)
+      }
+    }
+  }
+}
+
 function sendSelectedNodes() {
   const selectedNodes = getSelectedNodes()
+  setInitialNodes(selectedNodes.map((n) => n.id))
 
   postMessage({
     type: WorkerActionTypes.SELECTED_NODES,
@@ -64,16 +98,52 @@ function sendSelectedNodes() {
   })
 }
 
-const SPLIT = 10
+function resetVectorNodes(nodeIds: string[]) {
+  setInitialNodes(nodeIds)
 
-function applyPerfectFreehandToVectorNodes() {
-  const selectedNodes = getSelectedNodes()
-
-  for (let { id } of selectedNodes) {
+  for (let id of nodeIds) {
     const node = figma.getNodeById(id) as VectorNode
+    if (!node) continue
+    const prev = previousNodes[id]
+    node.vectorPaths = prev.vectorPaths
+    node.x = prev.x
+    node.y = prev.y
+  }
+}
+
+function applyPerfectFreehandToVectorNodes(
+  nodeIds: string[],
+  {
+    options,
+    easing,
+  }: {
+    options: StrokeOptions
+    easing: keyof typeof EASINGS
+  }
+) {
+  for (let id of nodeIds) {
+    let node: VectorNode
+
+    if (previousNodes[id]) {
+      node = previousNodes[id]
+    } else {
+      node = figma.getNodeById(id) as VectorNode
+      previousNodes[id] = {
+        ...node,
+        x: node.x,
+        y: node.y,
+        width: node.width,
+        height: node.height,
+        vectorNetwork: { ...node.vectorNetwork },
+        vectorPaths: node.vectorPaths,
+      }
+    }
+
+    let { x, y, width, height } = node
+
+    // Create a copy of the original
 
     const pts: number[][] = []
-    console.log(node.vectorNetwork)
 
     for (let segment of node.vectorNetwork.segments) {
       const p0 = node.vectorNetwork.vertices[segment.start]
@@ -90,25 +160,28 @@ function applyPerfectFreehandToVectorNodes() {
     }
 
     const stroke = getStroke(pts, {
-      size: 32,
-      easing: (t) => t * t * t,
-      streamline: 0.5,
-      smoothing: 0.5,
-      thinning: 0.75,
+      ...options,
+      easing: EASINGS[easing],
     })
 
-    node.vectorPaths = [
-      {
-        windingRule: "NONZERO",
-        data: getSvgPathFromStroke(stroke),
-      },
-    ]
-  }
+    const applyNode = figma.getNodeById(id)
 
-  postMessage({
-    type: WorkerActionTypes.SELECTED_NODES,
-    payload: selectedNodes,
-  })
+    if (applyNode && applyNode.type === "VECTOR") {
+      applyNode.setPluginData(
+        "perfect_freehand",
+        JSON.stringify(previousNodes[id])
+      )
+
+      applyNode.vectorPaths = [
+        {
+          windingRule: "NONZERO",
+          data: getSvgPathFromStroke(stroke),
+        },
+      ]
+      applyNode.x = x + width / 2 - applyNode.width / 2
+      applyNode.y = y + height / 2 - applyNode.height / 2
+    }
+  }
 }
 
 // --- Messages from the UI ---------------------------------------
@@ -125,8 +198,14 @@ figma.ui.onmessage = function ({ type, payload }: UIAction): void {
     case UIActionTypes.DESELECT_NODE:
       deselectNode(payload)
       break
-    case UIActionTypes.TRANSFORM_NODE:
-      applyPerfectFreehandToVectorNodes()
+    case UIActionTypes.RESET_NODES:
+      resetVectorNodes(getSelectedNodeIds())
+      break
+    case UIActionTypes.TRANSFORM_NODES:
+      applyPerfectFreehandToVectorNodes(getSelectedNodeIds(), payload)
+      break
+    case UIActionTypes.UPDATED_OPTIONS:
+      applyPerfectFreehandToVectorNodes(getSelectedAppliedNodeIds(), payload)
       break
   }
 }
@@ -139,7 +218,7 @@ figma.on("selectionchange", sendSelectedNodes)
 // --- Kickoff --------------------------------------------------------
 
 // Show the plugin interface
-figma.showUI(__html__, { width: 320, height: 360 })
+figma.showUI(__html__, { width: 320, height: 400 })
 
 // Send the current selection to the UI
 sendInitialSelectedNodes()

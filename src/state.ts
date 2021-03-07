@@ -22,9 +22,17 @@ function postMessage({ type, payload }: UIAction): void {
 const state = createState({
   data: {
     selectedNodes: [] as (FrameNode | ComponentNode | InstanceNode)[],
+    options: {
+      size: 32,
+      streamline: 0.5,
+      smoothing: 0.5,
+      thinning: 0.75,
+      easing: "linear",
+    },
   },
   on: {
     CLOSED_PLUGIN: "closePlugin",
+    CHANGED_OPTION: "setOption",
   },
   initial: "selectingNodes",
   states: {
@@ -64,6 +72,7 @@ const state = createState({
             },
             hasNodesSelected: {
               on: {
+                RESET_NODES: "resetSelectedNodes",
                 SELECTED_NODES: {
                   unless: "hasSelectedNodes",
                   to: "noNodesSelected",
@@ -108,8 +117,23 @@ const state = createState({
     closePlugin(data) {
       postMessage({ type: UIActionTypes.CLOSE })
     },
+    resetSelectedNodes() {
+      postMessage({
+        type: UIActionTypes.RESET_NODES,
+      })
+    },
     transformSelectedNodes(data) {
-      postMessage({ type: UIActionTypes.TRANSFORM_NODE })
+      postMessage({
+        type: UIActionTypes.TRANSFORM_NODES,
+        payload: { options: { ...data.options }, easing: data.options.easing },
+      })
+    },
+    setOption(data, payload) {
+      data.options = { ...data.options, ...payload }
+      postMessage({
+        type: UIActionTypes.UPDATED_OPTIONS,
+        payload: { options: { ...data.options }, easing: data.options.easing },
+      })
     },
   },
 })

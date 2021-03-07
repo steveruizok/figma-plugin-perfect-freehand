@@ -1,27 +1,24 @@
 import * as React from "react"
-import { useStateDesigner } from "@state-designer/react"
 import state from "../../state"
 import { styled } from "../theme"
 
-import { Button, Stack } from "../components/shared"
+import { Button } from "../components/shared"
 
-export default function FooterLinks({
-  signedIn = true,
-  children,
-}: {
-  signedIn?: boolean
-  children?: React.ReactNode
-}) {
+export default function FooterLinks() {
   return (
-    <Stack
-      direction="horizontal"
-      distribution={children || signedIn ? "between" : "end"}
-    >
-      {children}
-      <Button variant="detail">Perfect Freehand</Button>
+    <Container>
+      <Button variant="detail" onClick={() => state.send("RESET_NODES")}>
+        Reset Nodes
+      </Button>
       <Button variant="detail" onClick={() => state.send("OPENED_DOCS")}>
         Guide
       </Button>
-    </Stack>
+    </Container>
   )
 }
+
+const Container = styled.div({
+  pt: "$0",
+  display: "flex",
+  justifyContent: "space-between",
+})

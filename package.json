@@ -94,7 +94,8 @@
     ]
   },
   "dependencies": {
-    "@emotion/styled": "^10.0.27",
+    "@radix-ui/react-label": "^0.0.6",
+    "@radix-ui/react-slider": "^0.0.6",
     "@state-designer/react": "^1.5.6",
     "@stitches/react": "^0.0.2",
     "@types/react-dom": "^16.9.8",
