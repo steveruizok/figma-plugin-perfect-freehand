@@ -1,0 +1,7 @@
+{
+  "name": "Perfect Freehand",
+  "api": "1.0.0",
+  "main": "dist/plugin.js",
+  "ui": "dist/ui.html",
+  "id": "figma_plugin_perfect_freehand"
+}
