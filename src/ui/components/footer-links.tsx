@@ -1,5 +1,5 @@
 import * as React from "react"
-import state from "../../state"
+import state from "../state"
 import { styled } from "../theme"
 
 import { Button } from "../components/shared"
@@ -19,6 +19,7 @@ export default function FooterLinks() {
 
 const Container = styled.div({
   pt: "$0",
+  px: "$2",
   display: "flex",
   justifyContent: "space-between",
 })

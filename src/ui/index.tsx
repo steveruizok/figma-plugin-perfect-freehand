@@ -1,10 +1,8 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
-import firebase from "firebase/app"
-import "firebase/auth"
 
 import { useStateDesigner } from "@state-designer/react"
-import state from "../state"
+import state from "./state"
 
 import "./ui.css"
 

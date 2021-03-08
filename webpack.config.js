@@ -10,8 +10,8 @@ module.exports = (env, argv) => ({
   devtool: argv.mode === "production" ? false : "inline-source-map",
 
   entry: {
-    ui: "./src/ui/ui.tsx", // The entry point for your UI code
-    plugin: "./src/plugin/plugin.ts", // The entry point for your plugin code
+    ui: "./src/ui/index.tsx", // The entry point for your UI code
+    plugin: "./src/main/index.ts", // The entry point for your plugin code
   },
 
   module: {

@@ -180,6 +180,20 @@ export const Button = styled.button({
   },
   variants: {
     variant: {
+      detailHl: {
+        bg: "transparent",
+        py: "$0",
+        my: "-$0",
+        px: "$0",
+        mx: "-$0",
+        fontSize: "$detail",
+        lineHeight: "$ui",
+        color: "$accent",
+        "&:hover": {
+          bg: "$hover",
+          color: "$text",
+        },
+      },
       detail: {
         bg: "transparent",
         py: "$0",

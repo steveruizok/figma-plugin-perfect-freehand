@@ -4,10 +4,7 @@ import {
   UIAction,
   WorkerActionTypes,
   WorkerAction,
-} from "./types"
-import { userProjects } from "./dummy-data"
-import firebase from "firebase/app"
-import "firebase/auth"
+} from "../types"
 
 function asyncTimeout(duration = 1500) {
   return new Promise((resolve) => setTimeout(resolve, duration))
@@ -28,6 +25,7 @@ const state = createState({
       smoothing: 0.5,
       thinning: 0.75,
       easing: "linear",
+      clip: true,
     },
   },
   on: {
@@ -72,14 +70,13 @@ const state = createState({
             },
             hasNodesSelected: {
               on: {
-                RESET_NODES: "resetSelectedNodes",
                 SELECTED_NODES: {
                   unless: "hasSelectedNodes",
                   to: "noNodesSelected",
                 },
-                TRANSFORMED_NODES: {
-                  do: "transformSelectedNodes",
-                },
+                CHANGED_OPTION: "transformSelectedNodes",
+                TRANSFORMED_NODES: "transformSelectedNodes",
+                RESET_NODES: "resetSelectedNodes",
               },
             },
           },
@@ -125,14 +122,22 @@ const state = createState({
     transformSelectedNodes(data) {
       postMessage({
         type: UIActionTypes.TRANSFORM_NODES,
-        payload: { options: { ...data.options }, easing: data.options.easing },
+        payload: {
+          options: { ...data.options },
+          easing: data.options.easing,
+          clip: data.options.clip,
+        },
       })
     },
     setOption(data, payload) {
       data.options = { ...data.options, ...payload }
       postMessage({
         type: UIActionTypes.UPDATED_OPTIONS,
-        payload: { options: { ...data.options }, easing: data.options.easing },
+        payload: {
+          options: { ...data.options },
+          easing: data.options.easing,
+          clip: data.options.clip,
+        },
       })
     },
   },

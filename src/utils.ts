@@ -1,3 +1,5 @@
+import polygonClipping from "polygon-clipping"
+
 const { pow } = Math
 
 export function cubicBezier(
@@ -146,6 +148,21 @@ export function getSvgPathFromStroke(stroke: number[][]) {
   }
 
   d.push("Z")
+
+  return d.join(" ")
+}
+
+export function getFlatSvgPathFromStroke(stroke: number[][]) {
+  const poly = polygonClipping.union([stroke] as any)
+
+  const d = []
+
+  for (let face of poly) {
+    for (let points of face) {
+      points.push(points[0])
+      d.push(getSvgPathFromStroke(points))
+    }
+  }
 
   return d.join(" ")
 }

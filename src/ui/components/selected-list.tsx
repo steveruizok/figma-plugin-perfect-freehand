@@ -1,5 +1,5 @@
 import * as React from "react"
-import state from "../../state"
+import state from "../state"
 import { styled } from "../theme"
 import * as Icons from "../assets/icons"
 
@@ -26,7 +26,7 @@ function SelectedItem({ id, name, type }: SceneNode) {
   return (
     <ItemRow>
       <ZoomButton
-        title="Zoom into View"
+        title="Click to Zoom"
         onClick={() => state.send("ZOOMED_TO_NODE", id)}
       >
         <Icon onClick={() => state.send("ZOOMED_TO_NODE", id)} />
@@ -35,6 +35,7 @@ function SelectedItem({ id, name, type }: SceneNode) {
         </Text>
       </ZoomButton>
       <IconButton
+        data-hidey={true}
         title="Deselect"
         onClick={() => state.send("DESELECTED_NODE", id)}
       >
@@ -47,10 +48,10 @@ function SelectedItem({ id, name, type }: SceneNode) {
 const ListContainer = styled.ul({
   height: "100%",
   overflowY: "scroll",
-  mr: "-$1", // Making room for scrollbar
-  pr: "$1",
-  pl: 0,
+  ml: 0,
   my: 0,
+  pl: 0,
+  py: "$0",
   listStyleType: "none",
 })
 
@@ -59,7 +60,15 @@ const ItemRow = styled.li({
   gridTemplateColumns: "minmax(0, 1fr) min-content",
   alignItems: "center",
   gridGap: "$0",
+  pl: "$2",
+  pr: "$1",
   overflow: "hidden",
+  "& > *[data-hidey=true]": {
+    visibility: "hidden",
+  },
+  "&:hover > *[data-hidey=true]": {
+    visibility: "visible",
+  },
 })
 
 const ZoomButton = styled.button({
@@ -72,6 +81,7 @@ const ZoomButton = styled.button({
   alignItems: "center",
   p: 0,
   m: 0,
+  height: "100%",
   ml: "4px",
   "& > *:not(:first-child)": {
     ml: "$0",

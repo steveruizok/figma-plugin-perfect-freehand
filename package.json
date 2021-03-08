@@ -102,6 +102,7 @@
     "@types/react-select": "^3.0.19",
     "firebase": "^7.19.1",
     "perfect-freehand": "^0.3.3",
+    "polygon-clipping": "^0.15.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   }

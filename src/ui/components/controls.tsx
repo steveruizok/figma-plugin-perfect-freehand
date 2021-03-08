@@ -1,6 +1,6 @@
 import * as React from "react"
 import Label from "./label"
-import state from "../../state"
+import state from "../state"
 import { Text } from "./shared"
 import { styled } from "../theme"
 import { useSelector } from "@state-designer/react/"
@@ -13,7 +13,7 @@ export default function Controls() {
       <div>
         <LabelContainer>
           <Label>Size</Label>
-          <Text>{options.size}</Text>
+          <Text>{options.size}px</Text>
         </LabelContainer>
         <input
           type="range"
@@ -29,7 +29,7 @@ export default function Controls() {
       <div>
         <LabelContainer>
           <Label>Thinning</Label>
-          <Text>{options.thinning}</Text>
+          <Text>{Math.round(options.thinning * 100)}%</Text>
         </LabelContainer>
         <input
           type="range"
@@ -45,7 +45,7 @@ export default function Controls() {
       <div>
         <LabelContainer>
           <Label>Smoothing</Label>
-          <Text>{options.smoothing}</Text>
+          <Text>{Math.round(options.smoothing * 100)}%</Text>
         </LabelContainer>
         <input
           type="range"
@@ -61,7 +61,7 @@ export default function Controls() {
       <div>
         <LabelContainer>
           <Label>Streamline</Label>
-          <Text>{options.streamline}</Text>
+          <Text>{Math.round(options.streamline * 100)}%</Text>
         </LabelContainer>
         <input
           type="range"
@@ -74,17 +74,35 @@ export default function Controls() {
           }
         />
       </div>
+      <div>
+        <LabelContainer>
+          <Label>Clip</Label>
+          <input
+            type="checkbox"
+            checked={options.clip}
+            onChange={({ currentTarget: { checked } }) =>
+              state.send("CHANGED_OPTION", { clip: Boolean(checked) })
+            }
+          />
+        </LabelContainer>
+      </div>
     </ControlsContainer>
   )
 }
-
-const LabelContainer = styled.div({
-  display: "flex",
-  justifyContent: "space-between",
-})
 
 const ControlsContainer = styled.div({
   display: "grid",
   gap: "$0",
   input: { width: "100%" },
+  "input[type=checkbox]": {
+    width: "auto",
+  },
+  borderTop: "1px solid #E5E5E5",
+  pt: "$1",
+  px: "$2",
+})
+
+const LabelContainer = styled.div({
+  display: "flex",
+  justifyContent: "space-between",
 })

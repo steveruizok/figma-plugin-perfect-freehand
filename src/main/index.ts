@@ -8,10 +8,11 @@ import {
   getSvgPathFromStroke,
   addVectors,
   interpolateCubicBezier,
+  getFlatSvgPathFromStroke,
 } from "../utils"
 import getStroke, { StrokeOptions } from "perfect-freehand"
 
-const SPLIT = 10
+const SPLIT = 5
 const EASINGS = {
   linear: (t: number) => t,
   easeIn: (t: number) => t * t,
@@ -78,9 +79,9 @@ function sendInitialSelectedNodes() {
 function setInitialNodes(nodeIds: string[]) {
   for (let id of nodeIds) {
     if (previousNodes[id] === undefined) {
-      const realNode = figma.getNodeById(id)
-      if (!realNode) continue
-      const originalNode = realNode.getPluginData("perfect_freehand")
+      const node = figma.getNodeById(id)
+      if (!node) continue
+      const originalNode = node.getPluginData("perfect_freehand")
       if (originalNode) {
         previousNodes[id] = JSON.parse(originalNode)
       }
@@ -102,12 +103,15 @@ function resetVectorNodes(nodeIds: string[]) {
   setInitialNodes(nodeIds)
 
   for (let id of nodeIds) {
+    const prev = previousNodes[id]
+    if (!prev) continue
     const node = figma.getNodeById(id) as VectorNode
     if (!node) continue
-    const prev = previousNodes[id]
     node.vectorPaths = prev.vectorPaths
-    node.x = prev.x
-    node.y = prev.y
+    delete previousNodes[id]
+    // node.x = prev.x // If a user has moved a node themselves, this will move it back to its original place.
+    // node.y = prev.y
+    node.setPluginData("perfect_freehand", "")
   }
 }
 
@@ -116,9 +120,11 @@ function applyPerfectFreehandToVectorNodes(
   {
     options,
     easing,
+    clip,
   }: {
     options: StrokeOptions
     easing: keyof typeof EASINGS
+    clip: boolean
   }
 ) {
   for (let id of nodeIds) {
@@ -138,8 +144,6 @@ function applyPerfectFreehandToVectorNodes(
         vectorPaths: node.vectorPaths,
       }
     }
-
-    let { x, y, width, height } = node
 
     // Create a copy of the original
 
@@ -175,9 +179,14 @@ function applyPerfectFreehandToVectorNodes(
       applyNode.vectorPaths = [
         {
           windingRule: "NONZERO",
-          data: getSvgPathFromStroke(stroke),
+          data: clip
+            ? getFlatSvgPathFromStroke(stroke)
+            : getSvgPathFromStroke(stroke),
         },
       ]
+
+      let { x, y, width, height } = node
+
       applyNode.x = x + width / 2 - applyNode.width / 2
       applyNode.y = y + height / 2 - applyNode.height / 2
     }
@@ -218,7 +227,7 @@ figma.on("selectionchange", sendSelectedNodes)
 // --- Kickoff --------------------------------------------------------
 
 // Show the plugin interface
-figma.showUI(__html__, { width: 320, height: 400 })
+figma.showUI(__html__, { width: 320, height: 420 })
 
 // Send the current selection to the UI
 sendInitialSelectedNodes()
