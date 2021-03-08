@@ -1,6 +1,6 @@
 # Perfect Freehand Figma Plugin
 
-Work in progress.
+Awaiting review.
 
 ## Developing
 
