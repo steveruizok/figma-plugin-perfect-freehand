@@ -2,10 +2,10 @@ import * as React from "react"
 import state from "../state"
 import { styled } from "../theme"
 import * as Icons from "../assets/icons"
-
+import { NodeInfo } from "../../types"
 import { Text } from "../components/shared"
 
-export default function SelectedList({ items }: { items: SceneNode[] }) {
+export default function SelectedList({ items }: { items: NodeInfo[] }) {
   return (
     <ListContainer>
       {items.map((item) => (
@@ -15,7 +15,7 @@ export default function SelectedList({ items }: { items: SceneNode[] }) {
   )
 }
 
-function SelectedItem({ id, name, type }: SceneNode) {
+function SelectedItem({ id, name, type }: NodeInfo) {
   const Icon =
     type === "FRAME"
       ? Icons.Frame

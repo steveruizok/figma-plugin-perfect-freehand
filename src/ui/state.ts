@@ -1,36 +1,30 @@
 import { createState } from "@state-designer/react"
-import {
-  UIActionTypes,
-  UIAction,
-  WorkerActionTypes,
-  WorkerAction,
-} from "../types"
-
-function asyncTimeout(duration = 1500) {
-  return new Promise((resolve) => setTimeout(resolve, duration))
-}
+import { UIActionTypes, UIAction, NodeInfo } from "../types"
 
 function postMessage({ type, payload }: UIAction): void {
   parent.postMessage({ pluginMessage: { type, payload } }, "*")
+}
+
+const defaultOptions = {
+  size: 32,
+  streamline: 0.5,
+  smoothing: 0.5,
+  thinning: 0.75,
+  easing: "linear",
+  clip: true,
 }
 
 // This is the UI's global state machine. Events from the UI are sent here
 // and components in the UI subscribe to its changes.
 const state = createState({
   data: {
-    selectedNodes: [] as (FrameNode | ComponentNode | InstanceNode)[],
-    options: {
-      size: 32,
-      streamline: 0.5,
-      smoothing: 0.5,
-      thinning: 0.75,
-      easing: "linear",
-      clip: true,
-    },
+    selectedNodes: [] as NodeInfo[],
+    options: defaultOptions,
   },
   on: {
     CLOSED_PLUGIN: "closePlugin",
     CHANGED_OPTION: "setOption",
+    RESET_OPTION: ["setOptionToDefault", "setOption"],
   },
   initial: "selectingNodes",
   states: {
@@ -75,7 +69,10 @@ const state = createState({
                   to: "noNodesSelected",
                 },
                 TRANSFORMED_NODES: "transformSelectedNodes",
-                RESET_NODES: "resetSelectedNodes",
+                RESET_NODES: {
+                  if: "hasResetableNodes",
+                  do: "resetSelectedNodes",
+                },
               },
             },
           },
@@ -94,13 +91,13 @@ const state = createState({
     hasSelectedNodes(data) {
       return data.selectedNodes.length > 0
     },
+    hasResetableNodes(data) {
+      return data.selectedNodes.some((node) => node.canReset)
+    },
   },
   actions: {
     // Nodes
-    setSelectedNodes(
-      data,
-      payload: (FrameNode | ComponentNode | InstanceNode)[]
-    ) {
+    setSelectedNodes(data, payload: NodeInfo[]) {
       data.selectedNodes = payload
     },
     zoomToNode(data, id) {
@@ -138,6 +135,12 @@ const state = createState({
           clip: data.options.clip,
         },
       })
+    },
+    setOptionToDefault(data, payload: keyof typeof defaultOptions) {
+      data.options = {
+        ...data.options,
+        [payload]: defaultOptions[payload],
+      }
     },
   },
 })

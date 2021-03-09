@@ -24,6 +24,7 @@ export default function Controls() {
           onChange={({ currentTarget: { value } }) =>
             state.send("CHANGED_OPTION", { size: Number(value) })
           }
+          onDoubleClick={() => state.send("RESET_OPTION", "size")}
         />
       </div>
       <div>
@@ -40,6 +41,7 @@ export default function Controls() {
           onChange={({ currentTarget: { value } }) =>
             state.send("CHANGED_OPTION", { thinning: Number(value) })
           }
+          onDoubleClick={() => state.send("RESET_OPTION", "thinning")}
         />
       </div>
       <div>
@@ -56,6 +58,7 @@ export default function Controls() {
           onChange={({ currentTarget: { value } }) =>
             state.send("CHANGED_OPTION", { smoothing: Number(value) })
           }
+          onDoubleClick={() => state.send("RESET_OPTION", "smoothing")}
         />
       </div>
       <div>
@@ -72,6 +75,7 @@ export default function Controls() {
           onChange={({ currentTarget: { value } }) =>
             state.send("CHANGED_OPTION", { streamline: Number(value) })
           }
+          onDoubleClick={() => state.send("RESET_OPTION", "streamline")}
         />
       </div>
       <div>

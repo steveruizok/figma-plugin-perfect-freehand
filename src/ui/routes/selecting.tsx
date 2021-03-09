@@ -2,11 +2,9 @@ import * as React from "react"
 import { useStateDesigner } from "@state-designer/react"
 import state from "../state"
 import { styled } from "../theme"
-
 import Controls from "../components/controls"
 import SelectedList from "../components/selected-list"
-import FooterLinks from "../components/footer-links"
-import { Text, Button, Stack } from "../components/shared"
+import { Text, Button } from "../components/shared"
 
 export default function Selecting() {
   const local = useStateDesigner(state)
@@ -31,7 +29,7 @@ export default function Selecting() {
       <FooterContainer>
         <Button
           variant="detailHl"
-          disabled={local.isIn("noNodesSelected")}
+          disabled={!state.can("RESET_NODES")}
           onClick={() => state.send("RESET_NODES")}
         >
           Reset Nodes

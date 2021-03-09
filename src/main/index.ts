@@ -78,10 +78,11 @@ function getOriginalNode(id: string): OriginalNode | undefined {
 function getSelectedNodes() {
   return (figma.currentPage.selection.filter(
     ({ type }) => type === "VECTOR"
-  ) as VectorNode[]).map(({ id, name, type }: VectorNode) => ({
-    id,
-    name,
-    type,
+  ) as VectorNode[]).map((node: VectorNode) => ({
+    id: node.id,
+    name: node.name,
+    type: node.type,
+    canReset: !!node.getPluginData("perfect_freehand"),
   }))
 }
 
