@@ -11,6 +11,7 @@ import {
   getFlatSvgPathFromStroke,
 } from "../utils"
 import getStroke, { StrokeOptions } from "perfect-freehand"
+import { compressToUTF16, decompressFromUTF16 } from "lz-string"
 
 const SPLIT = 5
 const EASINGS = {
@@ -20,12 +21,106 @@ const EASINGS = {
   easeInOut: (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
 }
 
-const previousNodes: Record<string, VectorNode> = {}
+/* ---------------------- Comms ---------------------- */
 
 // Sends a message to the plugin UI
 function postMessage({ type, payload }: WorkerAction): void {
   figma.ui.postMessage({ type, payload })
 }
+
+/* -------------------- Selection ------------------- */
+
+// Deselects a Figma node
+function deselectNode(id: string) {
+  const selection = figma.currentPage.selection
+  figma.currentPage.selection = selection.filter((node) => node.id !== id)
+}
+
+// Send the current selection to the UI state
+function sendInitialSelectedNodes() {
+  const selectedNodes = getSelectedNodes()
+
+  postMessage({
+    type: WorkerActionTypes.FOUND_SELECTED_NODES,
+    payload: selectedNodes,
+  })
+}
+
+function sendSelectedNodes() {
+  const selectedNodes = getSelectedNodes()
+
+  postMessage({
+    type: WorkerActionTypes.SELECTED_NODES,
+    payload: selectedNodes,
+  })
+}
+
+/* ------------------- Local Cache ------------------ */
+
+// We need to store copies of original nodes (their vector networks and vertices)
+// so that we can restore the line after applying the effect. In order to stay
+// within memory limits, we store nodes as a compressed string. We're sacrificing
+// a little performance for a 80% size reduction.
+
+interface OriginalNode {
+  id: string
+  vectorNetwork: VectorNetwork
+  vectorPaths: VectorPaths
+  center: { x: number; y: number }
+}
+
+const originalNodes: Record<string, string> = {}
+
+function setOriginalNode(node: VectorNode): OriginalNode {
+  const originalNode: OriginalNode = {
+    ...node,
+    center: getCenter(node),
+    vectorNetwork: { ...node.vectorNetwork },
+    vectorPaths: node.vectorPaths,
+  }
+
+  originalNodes[node.id] = compressToUTF16(JSON.stringify(originalNode))
+  node.setPluginData("perfect_freehand", originalNodes[node.id])
+
+  return originalNode
+}
+
+function getOriginalNode(id: string): OriginalNode | undefined {
+  if (!originalNodes[id]) {
+    // We don't have the node in the local cache.
+    // Maybe it has data from a previous session?
+
+    let node = figma.getNodeById(id) as VectorNode
+
+    if (!node) {
+      throw Error("Could not find that node: " + id)
+    }
+
+    const pluginData = node.getPluginData("perfect_freehand")
+
+    if (!pluginData) {
+      // Nothing local, nothing saved — we've never modified this node.
+      return undefined
+    }
+
+    // Restore saved plugin data to the local cache.
+    originalNodes[id] = pluginData
+  }
+
+  // Decompress the saved data and parse out the original node.
+  const decompressed = decompressFromUTF16(originalNodes[id])
+
+  if (!decompressed) {
+    throw Error(
+      "Found saved data for original node but could not decompress it: " +
+        decompressed
+    )
+  }
+
+  return JSON.parse(decompressed) as OriginalNode
+}
+
+/* ---------------------- Nodes --------------------- */
 
 // Get all of the currently selected Figma nodes, filtered
 // with the provided array of NodeTypes.
@@ -46,10 +141,18 @@ function getSelectedNodeIds() {
     ({ type }) => type === "VECTOR"
   ) as VectorNode[]).map(({ id }) => id)
 }
-// Get all of the currently selected Figma nodes, filtered
-// with the provided array of NodeTypes.
-function getSelectedAppliedNodeIds() {
-  return getSelectedNodeIds().filter((id) => previousNodes[id] !== undefined)
+
+function getCenter(node: VectorNode) {
+  let { x, y, width, height } = node
+  return { x: x + width / 2, y: y + height / 2 }
+}
+
+function moveNodeToCenter(node: VectorNode, center: { x: number; y: number }) {
+  const { x: x0, y: y0 } = getCenter(node)
+  const { x: x1, y: y1 } = center
+
+  node.x = node.x + x1 - x0
+  node.y = node.y + y1 - y0
 }
 
 // Zooms the Figma viewport to a node
@@ -60,98 +163,47 @@ function zoomToNode(id: string) {
   figma.viewport.scrollAndZoomIntoView([node])
 }
 
-// Deselects a Figma node
-function deselectNode(id: string) {
-  const selection = figma.currentPage.selection
-  figma.currentPage.selection = selection.filter((node) => node.id !== id)
-}
+/* -------------- Changing VectorNodes -------------- */
 
-// Send the current selection to the UI state
-function sendInitialSelectedNodes() {
-  const selectedNodes = getSelectedNodes()
-
-  postMessage({
-    type: WorkerActionTypes.FOUND_SELECTED_NODES,
-    payload: selectedNodes,
-  })
-}
-
-function setInitialNodes(nodeIds: string[]) {
-  for (let id of nodeIds) {
-    if (previousNodes[id] === undefined) {
-      const node = figma.getNodeById(id)
-      if (!node) continue
-      const originalNode = node.getPluginData("perfect_freehand")
-      if (originalNode) {
-        previousNodes[id] = JSON.parse(originalNode)
-      }
-    }
-  }
-}
-
-function sendSelectedNodes() {
-  const selectedNodes = getSelectedNodes()
-  setInitialNodes(selectedNodes.map((n) => n.id))
-
-  postMessage({
-    type: WorkerActionTypes.SELECTED_NODES,
-    payload: selectedNodes,
-  })
-}
-
-function resetVectorNodes(nodeIds: string[]) {
-  setInitialNodes(nodeIds)
-
-  for (let id of nodeIds) {
-    const prev = previousNodes[id]
-    if (!prev) continue
-    const node = figma.getNodeById(id) as VectorNode
-    if (!node) continue
-    node.vectorPaths = prev.vectorPaths
-    delete previousNodes[id]
-    // node.x = prev.x // If a user has moved a node themselves, this will move it back to its original place.
-    // node.y = prev.y
-    node.setPluginData("perfect_freehand", "")
-  }
-}
-
+// Compute a stroke based on the vector and apply it to the vector's path data.
 function applyPerfectFreehandToVectorNodes(
   nodeIds: string[],
   {
     options,
-    easing,
+    easing = "linear",
     clip,
   }: {
     options: StrokeOptions
     easing: keyof typeof EASINGS
     clip: boolean
-  }
+  },
+  restrictToKnownNodes = false
 ) {
   for (let id of nodeIds) {
-    let node: VectorNode
+    // Get the node that we want to change
+    const nodeToChange = figma.getNodeById(id) as VectorNode
 
-    if (previousNodes[id]) {
-      node = previousNodes[id]
-    } else {
-      node = figma.getNodeById(id) as VectorNode
-      previousNodes[id] = {
-        ...node,
-        x: node.x,
-        y: node.y,
-        width: node.width,
-        height: node.height,
-        vectorNetwork: { ...node.vectorNetwork },
-        vectorPaths: node.vectorPaths,
-      }
+    if (!nodeToChange) {
+      throw Error("Could not find that node: " + id)
     }
 
-    // Create a copy of the original
+    // Get the original node
+    let originalNode = getOriginalNode(nodeToChange.id)
 
+    // If we don't know this node...
+    if (!originalNode) {
+      // Bail if we're updating nodes
+      if (restrictToKnownNodes) continue
+      // Create a new original node and continue
+      originalNode = setOriginalNode(nodeToChange)
+    }
+
+    // Interpolate new points along the vector's curve
     const pts: number[][] = []
 
-    for (let segment of node.vectorNetwork.segments) {
-      const p0 = node.vectorNetwork.vertices[segment.start]
-      const p3 = node.vectorNetwork.vertices[segment.end]
+    for (let segment of originalNode.vectorNetwork.segments) {
+      const p0 = originalNode.vectorNetwork.vertices[segment.start]
+      const p3 = originalNode.vectorNetwork.vertices[segment.end]
 
       const p1 = addVectors(p0, segment.tangentStart)
       const p2 = addVectors(p3, segment.tangentEnd)
@@ -163,20 +215,15 @@ function applyPerfectFreehandToVectorNodes(
       }
     }
 
+    // Create a new stroke using perfect-freehand
     const stroke = getStroke(pts, {
       ...options,
       easing: EASINGS[easing],
     })
 
-    const applyNode = figma.getNodeById(id)
-
-    if (applyNode && applyNode.type === "VECTOR") {
-      applyNode.setPluginData(
-        "perfect_freehand",
-        JSON.stringify(previousNodes[id])
-      )
-
-      applyNode.vectorPaths = [
+    try {
+      // Set stroke to vector paths
+      nodeToChange.vectorPaths = [
         {
           windingRule: "NONZERO",
           data: clip
@@ -184,12 +231,39 @@ function applyPerfectFreehandToVectorNodes(
             : getSvgPathFromStroke(stroke),
         },
       ]
-
-      let { x, y, width, height } = node
-
-      applyNode.x = x + width / 2 - applyNode.width / 2
-      applyNode.y = y + height / 2 - applyNode.height / 2
+    } catch (e) {
+      console.error("Could not apply stroke", e.message)
+      continue
     }
+
+    // Adjust the position of the node so that its center does not change
+    moveNodeToCenter(nodeToChange, originalNode.center)
+  }
+}
+
+// Reset the node to its original path data, using data from our cache and then delete the node.
+function resetVectorNodes(nodeIds: string[]) {
+  for (let id of nodeIds) {
+    const originalNode = getOriginalNode(id)
+
+    // We haven't modified this node.
+    if (!originalNode) {
+      return
+    }
+
+    const currentNode = figma.getNodeById(id) as VectorNode
+
+    if (!currentNode) {
+      throw Error("Could not find that node: " + id)
+    }
+
+    currentNode.vectorPaths = originalNode.vectorPaths
+
+    delete originalNodes[id]
+    currentNode.setPluginData("perfect_freehand", "")
+    // TODO: If a user has moved a node themselves, this will move it back to its original place.
+    // node.x = originalNode.x
+    // node.y = originalNode.y
   }
 }
 
@@ -211,10 +285,10 @@ figma.ui.onmessage = function ({ type, payload }: UIAction): void {
       resetVectorNodes(getSelectedNodeIds())
       break
     case UIActionTypes.TRANSFORM_NODES:
-      applyPerfectFreehandToVectorNodes(getSelectedNodeIds(), payload)
+      applyPerfectFreehandToVectorNodes(getSelectedNodeIds(), payload, false)
       break
     case UIActionTypes.UPDATED_OPTIONS:
-      applyPerfectFreehandToVectorNodes(getSelectedAppliedNodeIds(), payload)
+      applyPerfectFreehandToVectorNodes(getSelectedNodeIds(), payload, true)
       break
   }
 }

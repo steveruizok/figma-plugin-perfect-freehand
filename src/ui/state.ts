@@ -74,7 +74,6 @@ const state = createState({
                   unless: "hasSelectedNodes",
                   to: "noNodesSelected",
                 },
-                CHANGED_OPTION: "transformSelectedNodes",
                 TRANSFORMED_NODES: "transformSelectedNodes",
                 RESET_NODES: "resetSelectedNodes",
               },
