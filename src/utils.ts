@@ -153,18 +153,23 @@ export function getSvgPathFromStroke(stroke: number[][]) {
 }
 
 export function getFlatSvgPathFromStroke(stroke: number[][]) {
-  const poly = polygonClipping.union([stroke] as any)
+  try {
+    const poly = polygonClipping.union([stroke] as any)
 
-  const d = []
+    const d = []
 
-  for (let face of poly) {
-    for (let points of face) {
-      points.push(points[0])
-      d.push(getSvgPathFromStroke(points))
+    for (let face of poly) {
+      for (let points of face) {
+        points.push(points[0])
+        d.push(getSvgPathFromStroke(points))
+      }
     }
+
+    d.push("Z")
+
+    return d.join(" ")
+  } catch (e) {
+    console.error("Could not clip path.")
+    return getSvgPathFromStroke(stroke)
   }
-
-  d.push("Z")
-
-  return d.join(" ")
 }

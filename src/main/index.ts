@@ -234,6 +234,8 @@ function applyPerfectFreehandToVectorNodes(
     // Adjust the position of the node so that its center does not change
     moveNodeToCenter(nodeToChange, originalNode.center)
   }
+
+  sendSelectedNodes()
 }
 
 // Reset the node to its original path data, using data from our cache and then delete the node.
@@ -257,6 +259,8 @@ function resetVectorNodes() {
     // TODO: If a user has moved a node themselves, this will move it back to its original place.
     // node.x = originalNode.x
     // node.y = originalNode.y
+
+    sendSelectedNodes()
   }
 }
 
