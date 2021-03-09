@@ -3,6 +3,7 @@ import {
   UIAction,
   WorkerActionTypes,
   WorkerAction,
+  NodeInfo,
 } from "../types"
 import {
   getSvgPathFromStroke,
@@ -48,17 +49,7 @@ function setOriginalNode(node: VectorNode): OriginalNode {
   return originalNode
 }
 
-// Get an original node from a node's plugin data.
-function getOriginalNode(id: string): OriginalNode | undefined {
-  let node = figma.getNodeById(id) as VectorNode
-
-  if (!node) throw Error("Could not find that node: " + id)
-
-  const pluginData = node.getPluginData("perfect_freehand")
-
-  // Nothing on the node — we haven't modified it.
-  if (!pluginData) return undefined
-
+function decompressPluginData(pluginData: string) {
   // Decompress the saved data and parse out the original node.
   const decompressed = decompressFromUTF16(pluginData)
 
@@ -72,18 +63,54 @@ function getOriginalNode(id: string): OriginalNode | undefined {
   return JSON.parse(decompressed) as OriginalNode
 }
 
+// Get an original node from a node's plugin data.
+function getOriginalNode(id: string): OriginalNode | undefined {
+  let node = figma.getNodeById(id) as VectorNode
+
+  if (!node) throw Error("Could not find that node: " + id)
+
+  const pluginData = node.getPluginData("perfect_freehand")
+
+  // Nothing on the node — we haven't modified it.
+  if (!pluginData) return undefined
+
+  return decompressPluginData(pluginData)
+}
+
 /* ---------------------- Nodes --------------------- */
 
 // Get the currently selected Vector nodes for the UI.
-function getSelectedNodes() {
+function getSelectedNodes(updateCenter = false): NodeInfo[] {
   return (figma.currentPage.selection.filter(
     ({ type }) => type === "VECTOR"
-  ) as VectorNode[]).map((node: VectorNode) => ({
-    id: node.id,
-    name: node.name,
-    type: node.type,
-    canReset: !!node.getPluginData("perfect_freehand"),
-  }))
+  ) as VectorNode[]).map((node: VectorNode) => {
+    const pluginData = node.getPluginData("perfect_freehand")
+
+    if (pluginData && updateCenter) {
+      const center = getCenter(node)
+      const originalNode = decompressPluginData(pluginData)
+      if (
+        !(
+          center.x === originalNode.center.x &&
+          center.y === originalNode.center.y
+        )
+      ) {
+        originalNode.center = center
+
+        node.setPluginData(
+          "perfect_freehand",
+          compressToUTF16(JSON.stringify(originalNode))
+        )
+      }
+    }
+
+    return {
+      id: node.id,
+      name: node.name,
+      type: node.type,
+      canReset: !!pluginData,
+    }
+  })
 }
 
 // Getthe currently selected Vector nodes as an array of Ids.
@@ -138,8 +165,8 @@ function sendInitialSelectedNodes() {
   })
 }
 
-function sendSelectedNodes() {
-  const selectedNodes = getSelectedNodes()
+function sendSelectedNodes(updateCenter = true) {
+  const selectedNodes = getSelectedNodes(updateCenter)
 
   postMessage({
     type: WorkerActionTypes.SELECTED_NODES,
@@ -235,7 +262,7 @@ function applyPerfectFreehandToVectorNodes(
     moveNodeToCenter(nodeToChange, originalNode.center)
   }
 
-  sendSelectedNodes()
+  sendSelectedNodes(false)
 }
 
 // Reset the node to its original path data, using data from our cache and then delete the node.
@@ -256,11 +283,8 @@ function resetVectorNodes() {
     currentNode.vectorPaths = originalNode.vectorPaths
 
     currentNode.setPluginData("perfect_freehand", "")
-    // TODO: If a user has moved a node themselves, this will move it back to its original place.
-    // node.x = originalNode.x
-    // node.y = originalNode.y
 
-    sendSelectedNodes()
+    sendSelectedNodes(false)
   }
 }
 
