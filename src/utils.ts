@@ -164,5 +164,7 @@ export function getFlatSvgPathFromStroke(stroke: number[][]) {
     }
   }
 
+  d.push("Z")
+
   return d.join(" ")
 }
