@@ -149,22 +149,13 @@ function zoomToNode(id: string) {
 
 /* -------------------- Selection ------------------- */
 
-// Deselects a Figma node
+// Deselect a Figma node.
 function deselectNode(id: string) {
   const selection = figma.currentPage.selection
   figma.currentPage.selection = selection.filter((node) => node.id !== id)
 }
 
-// Send the current selection to the UI state
-function sendInitialSelectedNodes() {
-  const selectedNodes = getSelectedNodes()
-
-  postMessage({
-    type: WorkerActionTypes.FOUND_SELECTED_NODES,
-    payload: selectedNodes,
-  })
-}
-
+// Send the current selection to the UI state.
 function sendSelectedNodes(updateCenter = true) {
   const selectedNodes = getSelectedNodes(updateCenter)
 
@@ -321,4 +312,4 @@ figma.on("selectionchange", sendSelectedNodes)
 figma.showUI(__html__, { width: 320, height: 420 })
 
 // Send the current selection to the UI
-sendInitialSelectedNodes()
+sendSelectedNodes()

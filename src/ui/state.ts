@@ -1,10 +1,6 @@
 import { createState } from "@state-designer/react"
 import { UIActionTypes, UIAction, NodeInfo } from "../types"
 
-function postMessage({ type, payload }: UIAction): void {
-  parent.postMessage({ pluginMessage: { type, payload } }, "*")
-}
-
 const defaultOptions = {
   size: 32,
   streamline: 0.5,
@@ -14,66 +10,45 @@ const defaultOptions = {
   clip: true,
 }
 
-// This is the UI's global state machine. Events from the UI are sent here
-// and components in the UI subscribe to its changes.
+// This is the UI's global state machine. Events from the UI
+// are sent here. Components in the UI subscribe to its changes.
 const state = createState({
   data: {
     selectedNodes: [] as NodeInfo[],
     options: defaultOptions,
   },
-  on: {
-    CLOSED_PLUGIN: "closePlugin",
-    CHANGED_OPTION: "setOption",
-    RESET_OPTION: ["setOptionToDefault", "setOption"],
-  },
+  on: { CLOSED_PLUGIN: "closePlugin" },
   initial: "selectingNodes",
   states: {
     selectingNodes: {
       on: {
+        RESET_OPTION: ["setOptionToDefault", "setOption"],
+        CHANGED_OPTION: "setOption",
         OPENED_DOCS: { to: "readingDocs" },
+        SELECTED_NODES: "setSelectedNodes",
+        DESELECTED_NODE: "deselectNode",
+        ZOOMED_TO_NODE: "zoomToNode",
       },
+      initial: "hasNodesSelected",
       states: {
-        nodes: {
+        noNodesSelected: {
           on: {
-            SELECTED_NODES: "setSelectedNodes",
-            DESELECTED_NODE: "deselectNode",
-            ZOOMED_TO_NODE: "zoomToNode",
-            FOUND_SELECTED_NODES: [
-              {
-                do: "setSelectedNodes",
-              },
-              {
-                if: "hasSelectedNodes",
-                to: "hasNodesSelected",
-              },
-            ],
-          },
-          initial: {
-            if: "hasSelectedNodes",
-            to: "hasNodesSelected",
-            else: { to: "noNodesSelected" },
-          },
-          states: {
-            noNodesSelected: {
-              on: {
-                SELECTED_NODES: {
-                  if: "hasSelectedNodes",
-                  to: "hasNodesSelected",
-                },
-              },
+            SELECTED_NODES: {
+              if: "hasSelectedNodes",
+              to: "hasNodesSelected",
             },
-            hasNodesSelected: {
-              on: {
-                SELECTED_NODES: {
-                  unless: "hasSelectedNodes",
-                  to: "noNodesSelected",
-                },
-                TRANSFORMED_NODES: "transformSelectedNodes",
-                RESET_NODES: {
-                  if: "hasResetableNodes",
-                  do: "resetSelectedNodes",
-                },
-              },
+          },
+        },
+        hasNodesSelected: {
+          on: {
+            SELECTED_NODES: {
+              unless: "hasSelectedNodes",
+              to: "noNodesSelected",
+            },
+            TRANSFORMED_NODES: "transformSelectedNodes",
+            RESET_NODES: {
+              if: "hasResetableNodes",
+              do: "resetSelectedNodes",
             },
           },
         },
@@ -96,7 +71,7 @@ const state = createState({
     },
   },
   actions: {
-    // Nodes
+    // Slection
     setSelectedNodes(data, payload: NodeInfo[]) {
       data.selectedNodes = payload
     },
@@ -106,15 +81,7 @@ const state = createState({
     deselectNode(data, id) {
       postMessage({ type: UIActionTypes.DESELECT_NODE, payload: id })
     },
-    // Plugin
-    closePlugin(data) {
-      postMessage({ type: UIActionTypes.CLOSE })
-    },
-    resetSelectedNodes() {
-      postMessage({
-        type: UIActionTypes.RESET_NODES,
-      })
-    },
+    // Transforms
     transformSelectedNodes(data) {
       postMessage({
         type: UIActionTypes.TRANSFORM_NODES,
@@ -125,6 +92,12 @@ const state = createState({
         },
       })
     },
+    resetSelectedNodes() {
+      postMessage({
+        type: UIActionTypes.RESET_NODES,
+      })
+    },
+    // Options
     setOption(data, payload) {
       data.options = { ...data.options, ...payload }
       postMessage({
@@ -142,8 +115,16 @@ const state = createState({
         [payload]: defaultOptions[payload],
       }
     },
+    // Plugin
+    closePlugin() {
+      postMessage({ type: UIActionTypes.CLOSE })
+    },
   },
 })
+
+function postMessage({ type, payload }: UIAction): void {
+  parent.postMessage({ pluginMessage: { type, payload } }, "*")
+}
 
 // Forward messages sent from the plugin controller to the state
 window.onmessage = (event: any) => {
@@ -154,11 +135,3 @@ window.onmessage = (event: any) => {
 export default state
 
 // state.onUpdate((d) => console.log(d.active))
-
-// This bit right here needs a .env file ------------------------
-
-// const app = firebase.initializeApp(fbconfig)
-
-// firebase.auth().onAuthStateChanged((user) => {
-//   state.send("AUTHENTICATION_CHANGED", user)
-// })
