@@ -54,6 +54,9 @@ const Layout = styled.div({
     mt: "$1",
     mb: "$1",
   },
+  "& *": {
+    outlineColor: "#00A5FF",
+  },
 })
 
 const Instructions = styled.div({

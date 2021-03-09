@@ -78,7 +78,21 @@ export default function Controls() {
           onDoubleClick={() => state.send("RESET_OPTION", "streamline")}
         />
       </div>
-      <div>
+      <DoubleRow>
+        <LabelContainer>
+          <Label>Easing</Label>
+          <select
+            value={options.easing}
+            onChange={({ currentTarget: { value } }) =>
+              state.send("CHANGED_OPTION", { easing: value })
+            }
+          >
+            <option value="linear">Linear</option>
+            <option value="easeIn">Ease In</option>
+            <option value="easeOut">Ease Out</option>
+            <option value="easeInOut">Ease In Out</option>
+          </select>
+        </LabelContainer>
         <LabelContainer>
           <Label>Clip</Label>
           <input
@@ -89,7 +103,7 @@ export default function Controls() {
             }
           />
         </LabelContainer>
-      </div>
+      </DoubleRow>
     </ControlsContainer>
   )
 }
@@ -100,6 +114,19 @@ const ControlsContainer = styled.div({
   input: { width: "100%" },
   "input[type=checkbox]": {
     width: "auto",
+    ml: 10,
+  },
+  "& select": {
+    ml: 10,
+    width: "100%",
+    fontSize: "12px",
+    fontWeight: 400,
+    height: "100%",
+    pt: "3px",
+    pb: "1px",
+    border: "1px solid #E5E5E5",
+    borderRadius: "4px",
+    fontFamily: "'Inter', system-ui, sans-serif",
   },
   borderTop: "1px solid #E5E5E5",
   pt: "$1",
@@ -109,4 +136,12 @@ const ControlsContainer = styled.div({
 const LabelContainer = styled.div({
   display: "flex",
   justifyContent: "space-between",
+  alignItems: "center",
+})
+
+const DoubleRow = styled.div({
+  display: "grid",
+  gridTemplateColumns: "1fr min-content",
+  gap: "$1",
+  alignItems: "center",
 })
