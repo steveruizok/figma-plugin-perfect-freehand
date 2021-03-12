@@ -1,9 +1,9 @@
 import * as React from "react"
 import state from "../state"
 import { styled } from "../theme"
+import { Button } from "../components/shared"
 
-import FooterLinks from "../components/footer-links"
-import { Text, Button } from "../components/shared"
+const VERSION = "1.0.3"
 
 export default function Docs() {
   return (
@@ -60,8 +60,8 @@ export default function Docs() {
           </dd>
           <dt>Streamline</dt>
           <dd>Increases the stability of the stroke.</dd>
-          <dt>Clip</dt>
-          <dd>Will flatten the stroke into an outline polygon.</dd>
+          {/* <dt>Clip</dt>
+          <dd>Will flatten the stroke into an outline polygon.</dd> */}
         </dl>
         <h2 id="tips">Tips</h2>
         <p>
@@ -72,6 +72,7 @@ export default function Docs() {
           Setting a negative <b>Thinning</b> value will cause the stroke to
           become thicker at minimum pressure.
         </p>
+        <p>To create a "flat" stroke, intersect the stroke with a rectangle.</p>
         <p>
           In general, areas with more vector nodes will result in greater
           pressure and so a thicker stroke, while areas with less detail will
@@ -82,7 +83,7 @@ export default function Docs() {
           If you'd like a better drawing experience—including real stylus
           pressure as well as better simulated pressure—try{" "}
           <a
-            href="https://perfect-freehand-demo.vercel.app"
+            href="https://perfect-freehand-example.vercel.app"
             target="_blank"
             rel="noopener"
           >
@@ -146,6 +147,7 @@ export default function Docs() {
           </a>
           .
         </p>
+        <p>Verison {VERSION}</p>
         <Scrim />
       </Instructions>
       <Button onClick={() => state.send("RETURNED")}>Back</Button>

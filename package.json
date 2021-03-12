@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "figma-plugin-perfect-freehand",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Create freehand strokes in Figma.",
   "scripts": {
     "start": "npm run dev",
@@ -103,7 +103,6 @@
     "@stitches/react": "^0.0.2",
     "lz-string": "^1.4.4",
     "perfect-freehand": "^0.3.3",
-    "polygon-clipping": "^0.15.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   }

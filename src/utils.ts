@@ -1,4 +1,4 @@
-import polygonClipping from "polygon-clipping"
+// import polygonClipping from "polygon-clipping"
 
 const { pow } = Math
 
@@ -152,24 +152,24 @@ export function getSvgPathFromStroke(stroke: number[][]) {
   return d.join(" ")
 }
 
-export function getFlatSvgPathFromStroke(stroke: number[][]) {
-  try {
-    const poly = polygonClipping.union([stroke] as any)
+// export function getFlatSvgPathFromStroke(stroke: number[][]) {
+//   try {
+//     const poly = polygonClipping.union([stroke] as any)
 
-    const d = []
+//     const d = []
 
-    for (let face of poly) {
-      for (let points of face) {
-        points.push(points[0])
-        d.push(getSvgPathFromStroke(points))
-      }
-    }
+//     for (let face of poly) {
+//       for (let points of face) {
+//         points.push(points[0])
+//         d.push(getSvgPathFromStroke(points))
+//       }
+//     }
 
-    d.push("Z")
+//     d.push("Z")
 
-    return d.join(" ")
-  } catch (e) {
-    console.error("Could not clip path.")
-    return getSvgPathFromStroke(stroke)
-  }
-}
+//     return d.join(" ")
+//   } catch (e) {
+//     console.error("Could not clip path.")
+//     return getSvgPathFromStroke(stroke)
+//   }
+// }

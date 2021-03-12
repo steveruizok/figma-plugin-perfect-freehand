@@ -1,7 +1,5 @@
 # Perfect Freehand Figma Plugin
 
-Awaiting review.
-
 ## Developing
 
 - Clone or download this repo.

@@ -9,7 +9,6 @@ import {
   getSvgPathFromStroke,
   addVectors,
   interpolateCubicBezier,
-  getFlatSvgPathFromStroke,
 } from "../utils"
 import getStroke, { StrokeOptions } from "perfect-freehand"
 import { compressToUTF16, decompressFromUTF16 } from "lz-string"
@@ -239,9 +238,11 @@ function applyPerfectFreehandToVectorNodes(
       nodeToChange.vectorPaths = [
         {
           windingRule: "NONZERO",
-          data: clip
-            ? getFlatSvgPathFromStroke(stroke)
-            : getSvgPathFromStroke(stroke),
+          data: getSvgPathFromStroke(stroke),
+          // Removed clipping for now.
+          // data: clip
+          //   ? getFlatSvgPathFromStroke(stroke)
+          //   : getSvgPathFromStroke(stroke),
         },
       ]
     } catch (e) {

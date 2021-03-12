@@ -78,21 +78,21 @@ export default function Controls() {
           onDoubleClick={() => state.send("RESET_OPTION", "streamline")}
         />
       </div>
-      <DoubleRow>
-        <LabelContainer>
-          <Label>Easing</Label>
-          <select
-            value={options.easing}
-            onChange={({ currentTarget: { value } }) =>
-              state.send("CHANGED_OPTION", { easing: value })
-            }
-          >
-            <option value="linear">Linear</option>
-            <option value="easeIn">Ease In</option>
-            <option value="easeOut">Ease Out</option>
-            <option value="easeInOut">Ease In Out</option>
-          </select>
-        </LabelContainer>
+      <LabelContainer>
+        <Label>Easing</Label>
+        <select
+          value={options.easing}
+          onChange={({ currentTarget: { value } }) =>
+            state.send("CHANGED_OPTION", { easing: value })
+          }
+        >
+          <option value="linear">Linear</option>
+          <option value="easeIn">Ease In</option>
+          <option value="easeOut">Ease Out</option>
+          <option value="easeInOut">Ease In Out</option>
+        </select>
+      </LabelContainer>
+      {/* <DoubleRow>
         <LabelContainer>
           <Label>Clip</Label>
           <input
@@ -102,8 +102,8 @@ export default function Controls() {
               state.send("CHANGED_OPTION", { clip: Boolean(checked) })
             }
           />
-        </LabelContainer>
-      </DoubleRow>
+        </LabelContainer> 
+      </DoubleRow>*/}
     </ControlsContainer>
   )
 }
