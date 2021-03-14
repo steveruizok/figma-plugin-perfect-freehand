@@ -3,7 +3,7 @@ import state from "../state"
 import { styled } from "../theme"
 import { Button } from "../components/shared"
 
-const VERSION = "1.0.3"
+const VERSION = "8"
 
 export default function Docs() {
   return (
