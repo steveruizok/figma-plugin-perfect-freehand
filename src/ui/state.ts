@@ -8,6 +8,8 @@ const defaultOptions = {
   thinning: 0.75,
   easing: "linear",
   clip: true,
+  taperStart: 0,
+  taperEnd: 0,
 }
 
 // This is the UI's global state machine. Events from the UI
@@ -103,7 +105,11 @@ const state = createState({
       postMessage({
         type: UIActionTypes.UPDATED_OPTIONS,
         payload: {
-          options: { ...data.options },
+          options: {
+            ...data.options,
+            start: { taper: data.options.taperStart },
+            end: { taper: data.options.taperEnd },
+          },
           easing: data.options.easing,
           clip: data.options.clip,
         },

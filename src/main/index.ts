@@ -310,7 +310,7 @@ figma.ui.onmessage = function ({ type, payload }: UIAction): void {
 figma.on("selectionchange", sendSelectedNodes)
 
 // Show the plugin interface
-figma.showUI(__html__, { width: 320, height: 420 })
+figma.showUI(__html__, { width: 320, height: 480 })
 
 // Send the current selection to the UI
 sendSelectedNodes()

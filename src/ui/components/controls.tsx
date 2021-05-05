@@ -78,6 +78,42 @@ export default function Controls() {
           onDoubleClick={() => state.send("RESET_OPTION", "streamline")}
         />
       </div>
+      <DoubleRow>
+        <div>
+          <LabelContainer>
+            <Label>Taper Start</Label>
+            <Text>{Math.round(options.taperStart)}px</Text>
+          </LabelContainer>
+          <input
+            type="range"
+            min={0}
+            max={200}
+            step={1}
+            value={options.taperStart}
+            onChange={({ currentTarget: { value } }) =>
+              state.send("CHANGED_OPTION", { taperStart: Number(value) })
+            }
+            onDoubleClick={() => state.send("RESET_OPTION", "taperStart")}
+          />
+        </div>
+        <div>
+          <LabelContainer>
+            <Label>Taper End</Label>
+            <Text>{Math.round(options.taperEnd)}px</Text>
+          </LabelContainer>
+          <input
+            type="range"
+            min={0}
+            max={200}
+            step={1}
+            value={options.taperEnd}
+            onChange={({ currentTarget: { value } }) =>
+              state.send("CHANGED_OPTION", { taperEnd: Number(value) })
+            }
+            onDoubleClick={() => state.send("RESET_OPTION", "taperEnd")}
+          />
+        </div>
+      </DoubleRow>
       <LabelContainer>
         <Label>Easing</Label>
         <select
@@ -141,7 +177,7 @@ const LabelContainer = styled.div({
 
 const DoubleRow = styled.div({
   display: "grid",
-  gridTemplateColumns: "1fr min-content",
+  gridTemplateColumns: "1fr 1fr",
   gap: "$1",
   alignItems: "center",
 })

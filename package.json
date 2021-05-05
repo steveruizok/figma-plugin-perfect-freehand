@@ -99,10 +99,10 @@
   },
   "dependencies": {
     "@radix-ui/react-label": "^0.0.6",
-    "@state-designer/react": "^1.6.1",
+    "@state-designer/react": "^1.7.1",
     "@stitches/react": "^0.0.2",
     "lz-string": "^1.4.4",
-    "perfect-freehand": "^0.3.5",
+    "perfect-freehand": "^0.4.6",
     "react": "^17.0.1",
     "react-dom": "^17.0.1"
   }
