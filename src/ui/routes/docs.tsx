@@ -60,6 +60,12 @@ export default function Docs() {
           </dd>
           <dt>Streamline</dt>
           <dd>Increases the stability of the stroke.</dd>
+          <dt>Taper Start</dt>
+          <dd>Tapers the beginning of the stroke.</dd>
+          <dt>Taper End</dt>
+          <dd>Tapers the end of the stroke.</dd>
+          <dt>Easing</dt>
+          <dd>Applies an easing curve to the line's simulated pressure.</dd>
           {/* <dt>Clip</dt>
           <dd>Will flatten the stroke into an outline polygon.</dd> */}
         </dl>

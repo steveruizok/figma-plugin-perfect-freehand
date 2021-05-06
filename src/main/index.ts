@@ -228,9 +228,11 @@ function applyPerfectFreehandToVectorNodes(
     }
 
     // Create a new stroke using perfect-freehand
+
     const stroke = getStroke(pts, {
       ...options,
       easing: EASINGS[easing],
+      last: true,
     })
 
     try {
@@ -239,10 +241,6 @@ function applyPerfectFreehandToVectorNodes(
         {
           windingRule: "NONZERO",
           data: getSvgPathFromStroke(stroke),
-          // Removed clipping for now.
-          // data: clip
-          //   ? getFlatSvgPathFromStroke(stroke)
-          //   : getSvgPathFromStroke(stroke),
         },
       ]
     } catch (e) {
