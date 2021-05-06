@@ -1,5 +1,7 @@
 # Perfect Freehand Figma Plugin
 
+A plugin for using [perfect-freehand](https://github.com/steveruizok/perfect-freehand) in Figma.
+
 ## Developing
 
 - Clone or download this repo.
